@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        button {
+            margin-top: 10px;
+            padding: 8px;
+            cursor: pointer;
+        }
+        div#results {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>IP Calculator</h1>
+    <label for="ip">IP Address:</label>
+    <input type="text" id="ip" placeholder="Enter IP address" required>
+    
+    <label for="subnet_mask">Subnet Mask:</label>
+    <input type="text" id="subnet_mask" placeholder="Enter subnet mask" required>
+    
+    <button onclick="calculate()">Calculate</button>
+
+    <div id="results"></div>
+
+    <script>
+        function calculate() {
+            var ip = document.getElementById('ip').value;
+            var subnetMask = document.getElementById('subnet_mask').value;
+
+            try {
+                var network = new NetworkCalculator(ip, subnetMask);
+                var resultsDiv = document.getElementById('results');
+                resultsDiv.innerHTML = '<h2>Results:</h2>' +
+                    '<p>Network IP: ' + network.networkIP + '</p>' +
+                    '<p>Minimum Host: ' + network.minHost + '</p>' +
+                    '<p>Maximum Host: ' + network.maxHost + '</p>' +
+                    '<p>IP Range: ' + network.ipRange + '</p>';
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        }
+
+        function NetworkCalculator(ip, subnetMask) {
+            this.ip = ip;
+            this.subnetMask = subnetMask;
+            this.calculate();
+        }
+
+        NetworkCalculator.prototype.calculate = function() {
+            var network = new Network(this.ip, this.subnetMask);
+            this.networkIP = network.networkIP;
+            this.minHost = network.minHost;
+            this.maxHost = network.maxHost;
+            this.ipRange = network.ipRange;
+        };
+
+        function Network(ip, subnetMask) {
+            this.ip = ip;
+            this.subnetMask = subnetMask;
+            this.calculate();
+        }
+
+        Network.prototype.calculate = function() {
+            var ipInt = ipToNumber(this.ip);
+            var subnetMaskInt = ipToNumber(this.subnetMask);
+
+            if ((ipInt & subnetMaskInt) !== ipInt) {
+                throw new Error('Invalid IP address and subnet mask combination.');
+            }
+
+            this.networkIP = numberToIp(ipInt & subnetMaskInt);
+            this.minHost = numberToIp(ipInt + 1);
+            this.maxHost = numberToIp((ipInt | ~subnetMaskInt) - 1);
+            this.ipRange = this.minHost + ' - ' + this.maxHost;
+        };
+
+        function ipToNumber(ip) {
+            var parts = ip.split('.');
+            return (parseInt(parts[0]) << 24 | parseInt(parts[1]) << 16 |
+                parseInt(parts[2]) << 8 | parseInt(parts[3])) >>> 0;
+        }
+
+        function numberToIp(number) {
+            return ((number >>> 24) + '.' + (number >> 16 & 255) + '.' +
+                (number >> 8 & 255) + '.' + (number & 255));
+        }
+    </script>
+</body>
+</html>
